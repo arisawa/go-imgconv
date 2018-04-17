@@ -11,28 +11,40 @@ import (
 	"strings"
 )
 
+// Imgconv is used to store options of CLI.
 type Imgconv struct {
-	in      string
-	out     string
-	from    string
-	to      string
+	// in is input directory.
+	in string
+
+	// out is output directory.
+	out string
+
+	// from is image format before conversion
+	from string
+
+	// to is image format after conversion
+	to string
+
+	// Verbose is set, printing verbose output.
 	verbose bool
 }
 
-var Supported = map[string]int{
+var supportedFormats = map[string]int{
 	"png": 1,
 	"jpg": 1,
 	"gif": 1,
 }
 
+// SupportedFormats returns comma separated string of supported image formats.
 func SupportedFormats() string {
 	var formats []string
-	for k, _ := range Supported {
+	for k, _ := range supportedFormats {
 		formats = append(formats, k)
 	}
 	return strings.Join(formats, ", ")
 }
 
+// NewImgconv allocates a new Imgconv struct and detect error.
 func NewImgconv(in, out, from, to string, verbose bool) (*Imgconv, error) {
 	stat, err := os.Stat(in)
 	if err != nil {
@@ -48,10 +60,10 @@ func NewImgconv(in, out, from, to string, verbose bool) (*Imgconv, error) {
 	if !stat.IsDir() {
 		return &Imgconv{}, fmt.Errorf("out:%s is not directory", out)
 	}
-	if _, ok := Supported[from]; !ok {
+	if _, ok := supportedFormats[from]; !ok {
 		return &Imgconv{}, fmt.Errorf("from:%s is not supported", from)
 	}
-	if _, ok := Supported[to]; !ok {
+	if _, ok := supportedFormats[to]; !ok {
 		return &Imgconv{}, fmt.Errorf("to:%s is not supported", to)
 	}
 	if from == to {
@@ -60,6 +72,7 @@ func NewImgconv(in, out, from, to string, verbose bool) (*Imgconv, error) {
 	return &Imgconv{in, out, from, to, verbose}, nil
 }
 
+// Do executes image conversion for target files.
 func (c *Imgconv) Do() error {
 	err := filepath.Walk(c.in, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -88,6 +101,7 @@ func (c *Imgconv) Do() error {
 	return nil
 }
 
+// convert executes image conversion a source file.
 func (c *Imgconv) convert(src string) error {
 	destPath := strings.Split(src, "/")
 	basename := filepath.Base(src)
@@ -131,6 +145,7 @@ func (c *Imgconv) convert(src string) error {
 	return nil
 }
 
+// vLog prints log when verbose is set.
 func (c *Imgconv) vLog(format string, a ...interface{}) {
 	if !c.verbose {
 		return
