@@ -73,7 +73,7 @@ func NewImgconv(in, out, from, to string, verbose bool) (*Imgconv, error) {
 }
 
 // Do executes image conversion for target files.
-func (c *Imgconv) Do() error {
+func (c *Imgconv) ConvertRecursively() error {
 	err := filepath.Walk(c.in, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -86,7 +86,7 @@ func (c *Imgconv) Do() error {
 			return nil
 		}
 
-		err = c.convert(path)
+		err = c.Convert(path)
 		if err != nil {
 			return err
 		}
@@ -102,11 +102,11 @@ func (c *Imgconv) Do() error {
 }
 
 // convert executes image conversion a source file.
-func (c *Imgconv) convert(src string) error {
+func (c *Imgconv) Convert(src string) error {
 	destPath := strings.Split(src, "/")
 	basename := filepath.Base(src)
 	destPath[0] = c.out
-	destPath[len(destPath)-1] = strings.Replace(basename, c.from, c.to, 1)
+	destPath[len(destPath)-1] = strings.Replace(basename, c.from, c.to, 1) // fix filename
 	dest := filepath.Join(destPath...)
 
 	destDir := filepath.Dir(dest)

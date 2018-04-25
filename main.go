@@ -38,8 +38,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = c.Do();
-	if err != nil {
+	if err := c.ConvertRecursively(); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("%s: conversion finished\n", os.Args[0])
