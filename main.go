@@ -34,11 +34,11 @@ func main() {
 		log.Fatalf("%s: invalid argument", os.Args[0])
 	}
 
-	c, err := imgconv.NewImgconv(*in, *out, *from, *to, *verbose)
+	c, err := imgconv.NewImgconv(*from, *to, *verbose)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := c.ConvertRecursively(); err != nil {
+	if err := c.ConvertRecursively(*in, *out); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("%s: conversion finished\n", os.Args[0])
