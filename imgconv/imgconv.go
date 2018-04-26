@@ -35,6 +35,39 @@ func SupportedFormats() string {
 	return strings.Join(formats, ", ")
 }
 
+// Convert executes image conversion a source file to the dest file.
+func Convert(src, dest string) error {
+	file, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return err
+	}
+
+	w, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+
+	switch filepath.Ext(dest) {
+	case ".png":
+		err = png.Encode(w, img)
+	case ".jpg":
+		err = jpeg.Encode(w, img, &jpeg.Options{Quality: 100})
+	case ".gif":
+		err = gif.Encode(w, img, &gif.Options{NumColors: 256})
+	}
+	if err != nil {
+		return err
+	}
+	fmt.Printf("convert %v to %v\n", src, dest)
+	return nil
+}
+
 // NewImgconv allocates a new Imgconv struct and detect error.
 func NewImgconv(from, to string) (*Imgconv, error) {
 	if _, ok := supportedFormats[from]; !ok {
@@ -69,7 +102,7 @@ func (c *Imgconv) ConvertRecursively(in, out string) error {
 			return nil
 		}
 
-		if err = c.Convert(src, out); err != nil {
+		if err = Convert(src, c.buildDestPath(src, out)); err != nil {
 			return err
 		}
 
@@ -80,40 +113,6 @@ func (c *Imgconv) ConvertRecursively(in, out string) error {
 		return err
 	}
 
-	return nil
-}
-
-// Convert executes image conversion a source file to the dest file.
-func (c *Imgconv) Convert(src, out string) error {
-	dest := c.buildDestPath(src, out)
-
-	file, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return err
-	}
-
-	w, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer w.Close()
-
-	switch c.to {
-	case "png":
-		err = png.Encode(w, img)
-	case "jpg":
-		err = jpeg.Encode(w, img, &jpeg.Options{Quality: 100})
-	case "gif":
-		err = gif.Encode(w, img, &gif.Options{NumColors: 256})
-	}
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -131,4 +130,3 @@ func (c *Imgconv) buildDestPath(src, out string) string {
 	}
 	return dest
 }
-
