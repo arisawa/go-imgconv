@@ -6,6 +6,7 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	_ "golang.org/x/image/webp"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,7 +31,7 @@ func (f *Formats) Inspect(file string) bool {
 }
 
 // SourceFormats is the list of supported source formats.
-var SourceFormats = Formats{"png", "jpg", "gif"}
+var SourceFormats = Formats{"png", "jpg", "gif", "webp"}
 
 // DestFormats is the list of supported destination formats.
 var DestFormats = Formats{"png", "jpg", "gif"}
@@ -157,7 +158,7 @@ func (rc *RecursiveConverter) buildTargets() error {
 		if info.IsDir() {
 			return nil
 		}
-		if !SourceFormats.Inspect(src) {
+		if rc.srcFormat != strings.TrimLeft(filepath.Ext(src), ".") {
 			return nil
 		}
 		t := &target{src, rc.buildDest(src)}

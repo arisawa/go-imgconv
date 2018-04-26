@@ -46,6 +46,7 @@ func TestConvert(t *testing.T) {
 		{"png", "jpg", false},
 		{"png", "gif", false},
 		{"png", "webp", true},
+		{"webp", "jpg", false},
 	}
 
 	for _, tc := range testCase {
