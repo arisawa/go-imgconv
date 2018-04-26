@@ -8,6 +8,12 @@ import (
 	"github.com/arisawa/go-imgconv/imgconv"
 )
 
+// tp returns path joined from testdata
+func tp(path ...string) string {
+	root := []string{"..", "testdata"}
+	return filepath.Join(append(root, path...)...)
+}
+
 func TestInspectFormat(t *testing.T) {
 	t.Helper()
 	var testFormats = imgconv.Formats{"png", "jpg"}
@@ -43,8 +49,8 @@ func TestConvert(t *testing.T) {
 	}
 
 	for _, tc := range testCase {
-		src := filepath.Join("..", "testdata", "gopher."+tc.srcFormat)
-		dest := filepath.Join("..", "testdata", "gopher."+tc.destFormat)
+		src := tp("gopher."+tc.srcFormat)
+		dest := tp("tmp", "gopher."+tc.destFormat)
 		err := imgconv.Convert(src, dest)
 		if !tc.err && err != nil {
 			t.Fatalf("should not be error but: %v", err)
@@ -61,12 +67,6 @@ func TestConvert(t *testing.T) {
 
 type testTarget struct {
 	src, dest string
-}
-
-// tp returns path joined from testdata
-func tp(path ...string) string {
-	root := []string{"..", "testdata"}
-	return filepath.Join(append(root, path...)...)
 }
 
 func TestNewRecurciveConverter(t *testing.T) {
@@ -105,7 +105,7 @@ func TestNewRecurciveConverter(t *testing.T) {
 			err:         true,
 		},
 		{
-			in:          filepath.Join("..", "testdata"),
+			in:          tp(""),
 			out:         tp("tmp"),
 			srcFormat:   "png",
 			destFormat:  "png",
