@@ -71,10 +71,6 @@ func (c *Imgconv) ConvertRecursively(in, out string) error {
 		if info.IsDir() {
 			return nil
 		}
-		if filepath.Ext(src) != fmt.Sprintf(".%s", c.from) {
-			c.vLog("format is not match %s: %s", src, c.from)
-			return nil
-		}
 
 		if err = c.Convert(src, out); err != nil {
 			return err
@@ -121,7 +117,6 @@ func (c *Imgconv) Convert(src, out string) error {
 	if err != nil {
 		return err
 	}
-	c.vLog("convert %s to %s", src, dest)
 	return nil
 }
 
@@ -140,16 +135,3 @@ func (c *Imgconv) buildDestPath(src, out string) string {
 	return dest
 }
 
-// vLog prints log when verbose is set.
-func (c *Imgconv) vLog(format string, a ...interface{}) {
-	if !c.verbose {
-		return
-	}
-
-	s := fmt.Sprintf(format, a...)
-	if strings.HasSuffix(s, "\n") {
-		fmt.Print(s)
-	} else {
-		fmt.Println(s)
-	}
-}
