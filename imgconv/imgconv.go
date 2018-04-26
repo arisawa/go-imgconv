@@ -37,6 +37,13 @@ var DestFormats = Formats{"png", "jpg", "gif"}
 
 // Convert executes image conversion a source file to the destination file.
 func Convert(src, dest string) error {
+	if !SourceFormats.Inspect(src) {
+		return fmt.Errorf("src:%v is not supported", src)
+	}
+	if !DestFormats.Inspect(dest) {
+		return fmt.Errorf("dest:%s is not supported", dest)
+	}
+
 	file, err := os.Open(src)
 	if err != nil {
 		return err
@@ -60,8 +67,6 @@ func Convert(src, dest string) error {
 		err = jpeg.Encode(w, img, &jpeg.Options{Quality: 100})
 	case ".gif":
 		err = gif.Encode(w, img, &gif.Options{NumColors: 256})
-	default:
-		err = fmt.Errorf("")
 	}
 	if err != nil {
 		return err
@@ -78,7 +83,6 @@ type Imgconv struct {
 	// to is image format after conversion
 	to string
 }
-
 
 // NewImgconv allocates a new Imgconv struct and detect error.
 func NewImgconv(from, to string) (*Imgconv, error) {
