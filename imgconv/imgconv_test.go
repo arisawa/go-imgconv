@@ -63,6 +63,12 @@ type testTarget struct {
 	src, dest string
 }
 
+// tp returns path joined from testdata
+func tp(path ...string) string {
+	root := []string{"..", "testdata"}
+	return filepath.Join(append(root, path...)...)
+}
+
 func TestNewRecurciveConverter(t *testing.T) {
 	t.Helper()
 
@@ -72,13 +78,13 @@ func TestNewRecurciveConverter(t *testing.T) {
 		err                            bool
 	}{
 		{
-			in:         filepath.Join("..", "testdata"),
-			out:        "/tmp",
+			in:         tp(""),
+			out:        tp("tmp"),
 			srcFormat:  "png",
 			destFormat: "jpg",
 			wantTargets: []testTarget{
-				{filepath.Join("..", "testdata", "gopher.png"), filepath.Join("/tmp", "gopher.jpg")},
-				{filepath.Join("..", "testdata", "subdir", "gopher.png"), filepath.Join("/tmp", "subdir", "gopher.jpg")},
+				{tp("gopher.png"), tp("tmp", "gopher.jpg")},
+				{tp("subdir", "gopher.png"), tp("tmp", "subdir", "gopher.jpg")},
 			},
 			err: false,
 		},

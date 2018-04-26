@@ -157,6 +157,9 @@ func (rc *RecursiveConverter) buildTargets() error {
 		if info.IsDir() {
 			return nil
 		}
+		if !SourceFormats.Inspect(src) {
+			return nil
+		}
 		t := &target{src, rc.buildDest(src)}
 		rc.targets = append(rc.targets, t)
 		return nil
