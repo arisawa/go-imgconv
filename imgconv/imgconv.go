@@ -35,16 +35,31 @@ var SourceFormats = Formats{"png", "jpg", "gif"}
 // DestFormats is the list of supported destination formats.
 var DestFormats = Formats{"png", "jpg", "gif"}
 
-// Convert executes image conversion a source file to the destination file.
-func Convert(src, dest string) error {
-	if !SourceFormats.Inspect(src) {
-		return fmt.Errorf("src:%v is not supported", src)
+// target is the pair of conversion files
+type target struct {
+	src, dest string
+}
+
+// GetSrc returns property of src
+func (t *target) GetSrc() string {
+	return t.src
+}
+
+// GetDest returns property of dest
+func (t *target) GetDest() string {
+	return t.dest
+}
+
+// convert executes image conversion on target
+func (t *target) convert() error {
+	if !SourceFormats.Inspect(t.src) {
+		return fmt.Errorf("src:%v is not supported", t.src)
 	}
-	if !DestFormats.Inspect(dest) {
-		return fmt.Errorf("dest:%s is not supported", dest)
+	if !DestFormats.Inspect(t.dest) {
+		return fmt.Errorf("dest:%s is not supported", t.dest)
 	}
 
-	file, err := os.Open(src)
+	file, err := os.Open(t.src)
 	if err != nil {
 		return err
 	}
@@ -54,91 +69,120 @@ func Convert(src, dest string) error {
 		return err
 	}
 
-	w, err := os.Create(dest)
+	w, err := os.Create(t.dest)
 	if err != nil {
 		return err
 	}
 	defer w.Close()
 
-	switch filepath.Ext(dest) {
+	switch filepath.Ext(t.dest) {
 	case ".png":
-		err = png.Encode(w, img)
+		return png.Encode(w, img)
 	case ".jpg":
-		err = jpeg.Encode(w, img, &jpeg.Options{Quality: 100})
+		return jpeg.Encode(w, img, &jpeg.Options{Quality: 100})
 	case ".gif":
-		err = gif.Encode(w, img, &gif.Options{NumColors: 256})
+		return gif.Encode(w, img, &gif.Options{NumColors: 256})
 	}
-	if err != nil {
-		return err
-	}
-	fmt.Printf("convert %v to %v\n", src, dest)
-	return nil
+	return fmt.Errorf("Unknown error: %v", t.dest) // FIXME: panic でもいいのかも
 }
 
-// Imgconv is used to store options of CLI.
-type Imgconv struct {
-	// from is image format before conversion
-	from string
-
-	// to is image format after conversion
-	to string
+// Convert executes image conversion a source file to the destination file.
+func Convert(src, dest string) error {
+	t := &target{src, dest}
+	return t.convert()
 }
 
-// NewImgconv allocates a new Imgconv struct and detect error.
-func NewImgconv(from, to string) (*Imgconv, error) {
-	if !SourceFormats.Inspect(from) {
-		return &Imgconv{}, fmt.Errorf("from:%s is not supported", from)
-	}
-	if !DestFormats.Inspect(to) {
-		return &Imgconv{}, fmt.Errorf("to:%s is not supported", to)
-	}
-	if from == to {
-		return &Imgconv{}, fmt.Errorf("same formats are specified")
-	}
-	return &Imgconv{from, to}, nil
+// RecursiveConverter converts target images recursively.
+type RecursiveConverter struct {
+	// in is input directory.
+	in string
+	// out is output directory.
+	out string
+	// srcFormat is image format before conversion.
+	srcFormat string
+	// to is image format after conversion.
+	destFormat string
+	// targets
+	targets []*target
 }
 
-// Do executes image conversion for target files.
-func (c *Imgconv) ConvertRecursively(in, out string) error {
+// NewRecursiveConverter allocates a new RecursiveConverter struct and detect error.
+func NewRecursiveConverter(in, out, srcFormat, destFormat string) (*RecursiveConverter, error) {
+	rc := &RecursiveConverter{}
+
 	for _, dir := range []string{in, out} {
 		stat, err := os.Stat(dir)
 		if err != nil {
-			return err
+			return rc, err
 		}
 		if !stat.IsDir() {
-			return fmt.Errorf("%s is not directory", dir)
+			return rc, fmt.Errorf("%s is not directory", dir)
 		}
 	}
 
-	err := filepath.Walk(in, func(src string, info os.FileInfo, err error) error {
+	if srcFormat == destFormat {
+		return rc, fmt.Errorf("same formats are specified")
+	}
+
+	rc.in = in
+	rc.out = out
+	rc.srcFormat = srcFormat
+	rc.destFormat = destFormat
+	rc.buildTargets()
+
+	return rc, nil
+}
+
+// GetTargets returns property of targets.
+func (rc *RecursiveConverter) GetTargets() []*target {
+	return rc.targets
+}
+
+// Convert executes image conversion for target files.
+func (rc *RecursiveConverter) Convert() error {
+	for _, t := range rc.targets {
+		if err := t.convert(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// buildTargets is store the pair of target to targets.
+func (rc *RecursiveConverter) buildTargets() error {
+	err := filepath.Walk(rc.in, func(src string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
 			return nil
 		}
-
-		if err = Convert(src, c.buildDestPath(src, out)); err != nil {
-			return err
-		}
-
+		t := &target{src, rc.buildDest(src)}
+		rc.targets = append(rc.targets, t)
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
 // buildDestPath creates the destination file path.
-func (c *Imgconv) buildDestPath(src, out string) string {
-	destPath := strings.Split(src, "/")
+func (rc *RecursiveConverter) buildDest(src string) string {
+	in := filepath.Base(rc.in)
+	srcAbs, _ := filepath.Abs(src)
+	srcElems := strings.Split(srcAbs, string(os.PathSeparator))
+
+	destElems := []string{rc.out}
+	for i, elem := range srcElems {
+		if in == elem {
+			destElems = append(destElems, srcElems[i+1:]...)
+			continue
+		}
+	}
 	basename := filepath.Base(src)
-	destPath[0] = out
-	destPath[len(destPath)-1] = strings.TrimSuffix(basename, filepath.Ext(basename)) + "." + c.to
-	dest := filepath.Join(destPath...)
+	destElems[len(destElems)-1] = strings.TrimSuffix(basename, filepath.Ext(basename)) + "." + rc.destFormat
+	dest := filepath.Join(destElems...)
 
 	destDir := filepath.Dir(dest)
 	if _, err := os.Stat(destDir); err != nil {
