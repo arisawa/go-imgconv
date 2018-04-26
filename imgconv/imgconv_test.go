@@ -131,6 +131,8 @@ func TestNewRecurciveConverter(t *testing.T) {
 			if wt.dest != target.GetDest() {
 				t.Fatalf("dest file is not match. want: %v, got: %v", wt.dest, target.GetDest())
 			}
+			os.Remove(target.GetDest())
 		}
 	}
+	os.RemoveAll(tp("tmp", "subdir"))
 }
