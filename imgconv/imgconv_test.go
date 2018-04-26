@@ -88,6 +88,30 @@ func TestNewRecurciveConverter(t *testing.T) {
 			},
 			err: false,
 		},
+		{
+			in:          tp("not_exist_path"),
+			out:         tp("tmp"),
+			srcFormat:   "png",
+			destFormat:  "jpg",
+			wantTargets: []testTarget{},
+			err:         true,
+		},
+		{
+			in:          tp(""),
+			out:         tp("not_exist_path"),
+			srcFormat:   "png",
+			destFormat:  "jpg",
+			wantTargets: []testTarget{},
+			err:         true,
+		},
+		{
+			in:          filepath.Join("..", "testdata"),
+			out:         tp("tmp"),
+			srcFormat:   "png",
+			destFormat:  "png",
+			wantTargets: []testTarget{},
+			err:         true,
+		},
 	}
 
 	for _, tc := range testCase {
