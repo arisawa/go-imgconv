@@ -10,11 +10,10 @@ import (
 )
 
 var (
-	in      = flag.String("in", "", "Input directory")
-	out     = flag.String("out", "", "Output directory")
-	from    = flag.String("from", "", "Image format before conversion")
-	to      = flag.String("to", "", "Image format after conversion")
-	verbose = flag.Bool("verbose", false, "Verbose output")
+	in   = flag.String("in", "", "Input directory")
+	out  = flag.String("out", "", "Output directory")
+	from = flag.String("from", "", "Image format before conversion")
+	to   = flag.String("to", "", "Image format after conversion")
 )
 
 func main() {
@@ -34,7 +33,7 @@ func main() {
 		log.Fatalf("%s: invalid argument", os.Args[0])
 	}
 
-	c, err := imgconv.NewImgconv(*from, *to, *verbose)
+	c, err := imgconv.NewImgconv(*from, *to)
 	if err != nil {
 		log.Fatal(err)
 	}

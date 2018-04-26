@@ -18,9 +18,6 @@ type Imgconv struct {
 
 	// to is image format after conversion
 	to string
-
-	// Verbose is set, printing verbose output.
-	verbose bool
 }
 
 var supportedFormats = map[string]int{
@@ -39,7 +36,7 @@ func SupportedFormats() string {
 }
 
 // NewImgconv allocates a new Imgconv struct and detect error.
-func NewImgconv(from, to string, verbose bool) (*Imgconv, error) {
+func NewImgconv(from, to string) (*Imgconv, error) {
 	if _, ok := supportedFormats[from]; !ok {
 		return &Imgconv{}, fmt.Errorf("from:%s is not supported", from)
 	}
@@ -49,7 +46,7 @@ func NewImgconv(from, to string, verbose bool) (*Imgconv, error) {
 	if from == to {
 		return &Imgconv{}, fmt.Errorf("same formats are specified")
 	}
-	return &Imgconv{from, to, verbose}, nil
+	return &Imgconv{from, to}, nil
 }
 
 // Do executes image conversion for target files.
