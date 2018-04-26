@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/arisawa/go-imgconv/imgconv"
 )
@@ -22,9 +23,10 @@ func main() {
   %s -in INPUT_DIR -out OUTPUT_DIR -from FROM_FORMAT -to TO_FORMAT
 
   Convert image files under speicfied directory recursively.
-  Supported formats: %s
+  Supported src formats: [%s]
+  Supported dest formats: [%s]
 
-`, os.Args[0], imgconv.SupportedFormats())
+`, os.Args[0], strings.Join(imgconv.SourceFormats, ", "), strings.Join(imgconv.DestFormats, ", "))
 		flag.PrintDefaults()
 	}
 	flag.Parse()

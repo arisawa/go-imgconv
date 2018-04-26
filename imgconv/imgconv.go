@@ -11,31 +11,31 @@ import (
 	"strings"
 )
 
-// Imgconv is used to store options of CLI.
-type Imgconv struct {
-	// from is image format before conversion
-	from string
-
-	// to is image format after conversion
-	to string
+// formatInspecter inspects supported image format.
+type formatInspecter interface {
+	Inspect(string) bool
 }
 
-var supportedFormats = map[string]int{
-	"png": 1,
-	"jpg": 1,
-	"gif": 1,
-}
+// Formats is the list of registered image formats.
+type Formats []string
 
-// SupportedFormats returns comma separated string of supported image formats.
-func SupportedFormats() string {
-	var formats []string
-	for k, _ := range supportedFormats {
-		formats = append(formats, k)
+// Inspect returns true value when image format is supported.
+func (f *Formats) Inspect(file string) bool {
+	for _, format := range *f {
+		if format == strings.TrimLeft(filepath.Ext(file), ".") {
+			return true
+		}
 	}
-	return strings.Join(formats, ", ")
+	return false
 }
 
-// Convert executes image conversion a source file to the dest file.
+// SourceFormats is the list of supported source formats.
+var SourceFormats = Formats{"png", "jpg", "gif"}
+
+// DestFormats is the list of supported destination formats.
+var DestFormats = Formats{"png", "jpg", "gif"}
+
+// Convert executes image conversion a source file to the destination file.
 func Convert(src, dest string) error {
 	file, err := os.Open(src)
 	if err != nil {
@@ -60,6 +60,8 @@ func Convert(src, dest string) error {
 		err = jpeg.Encode(w, img, &jpeg.Options{Quality: 100})
 	case ".gif":
 		err = gif.Encode(w, img, &gif.Options{NumColors: 256})
+	default:
+		err = fmt.Errorf("")
 	}
 	if err != nil {
 		return err
@@ -68,12 +70,22 @@ func Convert(src, dest string) error {
 	return nil
 }
 
+// Imgconv is used to store options of CLI.
+type Imgconv struct {
+	// from is image format before conversion
+	from string
+
+	// to is image format after conversion
+	to string
+}
+
+
 // NewImgconv allocates a new Imgconv struct and detect error.
 func NewImgconv(from, to string) (*Imgconv, error) {
-	if _, ok := supportedFormats[from]; !ok {
+	if !SourceFormats.Inspect(from) {
 		return &Imgconv{}, fmt.Errorf("from:%s is not supported", from)
 	}
-	if _, ok := supportedFormats[to]; !ok {
+	if !DestFormats.Inspect(to) {
 		return &Imgconv{}, fmt.Errorf("to:%s is not supported", to)
 	}
 	if from == to {
